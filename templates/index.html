@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Legal Assistant</title>
+    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-balance-scale"></i> AI Legal Assistant</h1>
+            <p>Your intelligent legal analysis and document drafting companion</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="openTab('analyze')">Document Analysis</button>
+            <button class="tab-button" onclick="openTab('draft')">Document Drafting</button>
+        </div>
+
+        <!-- Document Analysis Tab -->
+        <div id="analyze" class="tab-content active">
+            <div class="card">
+                <h2><i class="fas fa-search"></i> Analyze Legal Documents</h2>
+                
+                <div class="form-group">
+                    <label for="analysis_type">Analysis Type:</label>
+                    <select id="analysis_type">
+                        <option value="document_summary">Document Summary</option>
+                        <option value="contract_review">Contract Review</option>
+                        <option value="compliance_check">Compliance Check</option>
+                        <option value="legal_advice">Legal Advice</option>
+                    </select>
+                </div>
+
+                <div class="upload-section">
+                    <h3>Upload Document</h3>
+                    <div class="file-upload">
+                        <input type="file" id="file_upload" accept=".pdf,.docx,.txt">
+                        <label for="file_upload" class="upload-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Choose PDF, DOCX, or TXT file</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="text-input-section">
+                    <h3>Or Paste Text</h3>
+                    <textarea id="analyze_text" placeholder="Paste your legal document text here..."></textarea>
+                </div>
+
+                <button onclick="analyzeDocument()" class="analyze-btn">
+                    <i class="fas fa-play"></i> Analyze Document
+                </button>
+            </div>
+
+            <div id="analyze_result" class="result-card hidden">
+                <h3><i class="fas fa-chart-bar"></i> Analysis Result</h3>
+                <div class="result-meta">
+                    <span id="result_type"></span>
+                    <span id="result_time"></span>
+                </div>
+                <div id="analyze_content" class="result-content"></div>
+                <button onclick="copyToClipboard('analyze_content')" class="copy-btn">
+                    <i class="fas fa-copy"></i> Copy Result
+                </button>
+            </div>
+        </div>
+
+        <!-- Document Drafting Tab -->
+        <div id="draft" class="tab-content">
+            <div class="card">
+                <h2><i class="fas fa-file-contract"></i> Draft Legal Documents</h2>
+                
+                <div class="form-group">
+                    <label for="doc_type">Document Type:</label>
+                    <select id="doc_type">
+                        <option value="nda">Non-Disclosure Agreement (NDA)</option>
+                        <option value="employment_contract">Employment Contract</option>
+                        <option value="lease_agreement">Lease Agreement</option>
+                        <option value="service_agreement">Service Agreement</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="requirements">Requirements:</label>
+                    <textarea id="requirements" placeholder="Describe your requirements... 
+Example: 
+- Parties: Company ABC and Consultant XYZ
+- Confidential information: Business plans, customer data
+- Term: 2 years
+- Jurisdiction: California"></textarea>
+                </div>
+
+                <button onclick="draftDocument()" class="draft-btn">
+                    <i class="fas fa-magic"></i> Generate Document
+                </button>
+            </div>
+
+            <div id="draft_result" class="result-card hidden">
+                <h3><i class="fas fa-file-alt"></i> Drafted Document</h3>
+                <div class="result-meta">
+                    <span id="draft_type"></span>
+                    <span id="draft_time"></span>
+                </div>
+                <div id="draft_content" class="result-content"></div>
+                <div class="action-buttons">
+                    <button onclick="copyToClipboard('draft_content')" class="copy-btn">
+                        <i class="fas fa-copy"></i> Copy Document
+                    </button>
+                    <button onclick="downloadDraft()" class="download-btn">
+                        <i class="fas fa-download"></i> Download as TXT
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Processing your request...</p>
+        </div>
+    </div>
+
+    <footer>
+        <p><i class="fas fa-info-circle"></i> Disclaimer: This AI Legal Assistant provides informational guidance only and is not a substitute for professional legal advice from qualified attorneys.</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+<style>
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 0;
+    margin: 0;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+/* Header Styles */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    color: white;
+    padding: 20px 0;
+}
+
+header h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+header h1 i {
+    margin-right: 15px;
+    color: #ffd700;
+}
+
+header p {
+    font-size: 1.2em;
+    opacity: 0.9;
+    font-weight: 300;
+}
+
+/* Tab Styles */
+.tabs {
+    display: flex;
+    background: white;
+    border-radius: 10px 10px 0 0;
+    overflow: hidden;
+    margin-bottom: 0;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.tab-button {
+    flex: 1;
+    padding: 15px 20px;
+    border: none;
+    background: #f8f9fa;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+}
+
+.tab-button:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+}
+
+.tab-button.active {
+    background: white;
+    color: #667eea;
+    border-bottom: 3px solid #667eea;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+    background: white;
+    padding: 30px;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Card Styles */
+.card {
+    margin-bottom: 30px;
+    padding: 0;
+}
+
+.card h2 {
+    color: #333;
+    margin-bottom: 25px;
+    font-size: 1.5em;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+.card h2 i {
+    margin-right: 10px;
+    color: #667eea;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+    font-size: 1.1em;
+}
+
+select, textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+select:focus, textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+textarea {
+    min-height: 150px;
+    resize: vertical;
+    font-family: 'Courier New', monospace;
+    line-height: 1.5;
+}
+
+/* Upload Section */
+.upload-section, .text-input-section {
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.upload-section h3, .text-input-section h3 {
+    margin-bottom: 15px;
+    color: #555;
+    font-size: 1.1em;
+    display: flex;
+    align-items: center;
+}
+
+.upload-section h3::before, .text-input-section h3::before {
+    content: "📄";
+    margin-right: 10px;
+}
+
+.file-upload {
+    position: relative;
+}
+
+.file-upload input[type="file"] {
+    display: none;
+}
+
+.upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.upload-label:hover {
+    border-color: #667eea;
+    background: #f8f9ff;
+    transform: translateY(-2px);
+}
+
+.upload-label i {
+    font-size: 2em;
+    color: #667eea;
+    margin-bottom: 10px;
+}
+
+.upload-label span {
+    color: #666;
+    font-weight: 500;
+}
+
+/* Button Styles */
+.analyze-btn, .draft-btn {
+    width: 100%;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+.analyze-btn:hover, .draft-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.analyze-btn:active, .draft-btn:active {
+    transform: translateY(0);
+}
+
+.analyze-btn i, .draft-btn i {
+    margin-right: 10px;
+}
+
+/* Result Card Styles */
+.result-card {
+    background: #f8f9ff;
+    border-radius: 8px;
+    padding: 25px;
+    border-left: 4px solid #667eea;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    margin-top: 20px;
+}
+
+.result-card.hidden {
+    display: none;
+}
+
+.result-card h3 {
+    margin-bottom: 15px;
+    color: #333;
+    font-size: 1.3em;
+    display: flex;
+    align-items: center;
+}
+
+.result-card h3 i {
+    margin-right: 10px;
+    color: #667eea;
+}
+
+.result-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    color: #666;
+    padding: 10px;
+    background: white;
+    border-radius: 5px;
+}
+
+.result-content {
+    background: white;
+    padding: 20px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    white-space: pre-wrap;
+    font-family: 'Courier New', monospace;
+    line-height: 1.6;
+    max-height: 500px;
+    overflow-y: auto;
+    font-size: 14px;
+}
+
+/* Action Buttons */
+.copy-btn, .download-btn {
+    padding: 10px 20px;
+    margin: 10px 5px 0 0;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.copy-btn {
+    background: #28a745;
+    color: white;
+}
+
+.copy-btn:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+.download-btn {
+    background: #007bff;
+    color: white;
+}
+
+.download-btn:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+}
+
+.action-buttons {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Loading Spinner */
+.loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    color: white;
+}
+
+.loading.hidden {
+    display: none;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 2s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading p {
+    font-size: 1.2em;
+    margin-top: 10px;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    margin-top: 30px;
+    padding: 20px;
+    color: white;
+    font-size: 0.9em;
+    opacity: 0.8;
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+}
+
+footer i {
+    margin-right: 8px;
+    color: #ffd700;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    header h1 {
+        font-size: 2em;
+    }
+    
+    .tab-content {
+        padding: 20px 15px;
+    }
+    
+    .result-meta {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+    
+    .copy-btn, .download-btn {
+        width: 100%;
+        margin: 5px 0;
+    }
+    
+    .tabs {
+        flex-direction: column;
+    }
+    
+    .tab-button {
+        padding: 12px 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.8em;
+    }
+    
+    header p {
+        font-size: 1em;
+    }
+    
+    .card h2 {
+        font-size: 1.3em;
+    }
+    
+    .upload-label {
+        padding: 20px 15px;
+    }
+    
+    .upload-label i {
+        font-size: 1.5em;
+    }
+}
+
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+.visible {
+    display: block;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mt-20 {
+    margin-top: 20px;
+}
+
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+/* Scrollbar Styling */
+.result-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.result-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.result-content::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 4px;
+}
+
+.result-content::-webkit-scrollbar-thumb:hover {
+    background: #5a6fd8;
+}
+
+</style>
+
+</html>
+
