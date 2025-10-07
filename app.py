@@ -38,7 +38,7 @@ class LegalAssistant:
         
         # Initialize the model
         try:
-            self.model = genai.GenerativeModel('gemini-pro')
+            self.model = genai.GenerativeModel('gemini-2.5-flash')
             self.model_available = True
         except Exception as e:
             print(f"Error initializing Gemini model: {e}")
